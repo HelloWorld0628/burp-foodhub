@@ -5,7 +5,7 @@ A full-stack PHP/MySQL food ordering system with customer, admin, and driver por
 ## Attribution
 
 **Code by:** Kevin Calleja ([@HelloWorld0628](https://github.com/HelloWorld0628))  
-**Brand:** BURP Foodhub  
+**Brand:** BURP FoodHub  
 **License:** MIT (see [LICENSE](LICENSE))
 
 ---
