@@ -77,22 +77,6 @@ burp-foodhub/
 
 ---
 
-## Railway Deployment
-
-1. Push to GitHub
-2. Create Railway project → Deploy from GitHub
-3. Add MySQL database service
-4. Set environment variables:
-   - `DB_HOST` = `${{MYSQLHOST}}`
-   - `DB_USER` = `${{MYSQLUSER}}`
-   - `DB_PASS` = `${{MYSQLPASSWORD}}`
-   - `DB_NAME` = `${{MYSQLDATABASE}}`
-5. Add persistent volumes for `public/payments_img`, `public/delivery_img`, `public/menu_img`
-6. Run migration: `ALTER TABLE customers ADD COLUMN password VARCHAR(255) NOT NULL AFTER email;`
-7. Get public URL from Railway → add to portfolio
-
----
-
 ## Security Notes
 
 - Uses `password_hash()` / `password_verify()` for customer passwords
