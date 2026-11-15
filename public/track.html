@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Order - BURP Foodhub</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet" />
+    <style>
+        /* ── Track Page Specific Styles ── */
+        .track-section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 100px 20px 60px;
+        }
+
+        /* Tabs Navigation */
+        .track-tabs {
+            display: flex;
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 30px;
+            background: #150d0d;
+            border: 2px solid #2a2a2a;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .track-tab {
+            flex: 1;
+            padding: 16px 24px;
+            background: transparent;
+            border: none;
+            color: #888;
+            font-size: 1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .track-tab:hover:not(.disabled) { background: rgba(255,69,0,0.1); color: orangered; }
+        .track-tab.active {
+            background: orangered;
+            color: #fff;
+        }
+        .track-tab.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .track-tab i { font-size: 1.1rem; }
+
+        /* Search Box */
+        .track-search-wrapper {
+            width: 100%;
+            max-width: 640px;
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeSlideUp 0.5s ease forwards;
+        }
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .track-search-wrapper .heading_1 {
+            font-family: 'Playwrite CU', cursive;
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+        }
+        .track-search-wrapper .heading {
+            font-size: 2.8rem;
+            margin-bottom: 40px;
+            line-height: 1.2;
+        }
+        .search-input-group {
+            display: flex;
+            gap: 0;
+            border: 2px solid orangered;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #150d0d;
+        }
+        .search-input-group input {
+            flex: 1;
+            padding: 18px 24px;
+            background: transparent;
+            border: none;
+            outline: none;
+            font-size: 1.2rem;
+            color: #fff;
+            font-family: 'Lato', sans-serif;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .search-input-group input::placeholder {
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .search-input-group button {
+            padding: 18px 32px;
+            background: orangered;
+            border: none;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+            font-family: 'Lato', sans-serif;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: background 0.3s;
+        }
+        .search-input-group button:hover { background: #cc3700; }
+
+        /* Error / Loading */
+        .track-message {
+            margin-top: 20px;
+            font-size: 1rem;
+            color: #888;
+            min-height: 24px;
+            text-align: center;
+        }
+        .track-message.error { color: #ff6b6b; }
+        .track-message.loading { color: #aaa; }
+
+        /* Result Card */
+        .track-result {
+            width: 100%;
+            max-width: 800px;
+            display: none;
+            animation: fadeSlideUp 0.5s ease forwards;
+        }
+
+        .order-info-card {
+            background: #150d0d;
+            border: 1px solid #333;
+            border-radius: 12px;
+            padding: 28px 32px;
+            margin-bottom: 36px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px 40px;
+        }
+        .order-info-card .info-row { display: flex; flex-direction: column; gap: 4px; }
+        .order-info-card .info-label {
+            font-size: 0.8rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .order-info-card .info-value {
+            font-size: 1.1rem;
+            color: #fff;
+            font-weight: 600;
+        }
+        .order-info-card .info-value.highlight { color: orangered; font-size: 1.3rem; }
+
+        /* ── Timeline ── */
+        .timeline-wrapper {
+            background: #150d0d;
+            border: 2px solid #222;
+            border-radius: 12px;
+            padding: 40px 32px 36px;
+        }
+        .timeline-wrapper h3 {
+            font-size: 1rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+        .timeline {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            position: relative;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 28px;
+            left: 10%;
+            right: 10%;
+            height: 3px;
+            background: #2a2a2a;
+            z-index: 0;
+        }
+        .timeline-progress-line {
+            position: absolute;
+            top: 28px;
+            left: 10%;
+            height: 3px;
+            background: orangered;
+            z-index: 1;
+            transition: width 0.8s cubic-bezier(.4,0,.2,1);
+            width: 0%;
+            box-shadow: 0 0 10px rgba(255,69,0,0.6);
+        }
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            position: relative;
+            z-index: 2;
+        }
+        .step-icon {
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            background: #1e1414;
+            border: 3px solid #2a2a2a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 16px;
+            transition: all 0.5s ease;
+        }
+        .step-icon i { font-size: 1.4rem; color: #444; transition: color 0.5s ease; }
+        .step-label {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #444;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+            margin-bottom: 6px;
+            transition: color 0.5s ease;
+        }
+        .step-desc {
+            font-size: 0.75rem;
+            color: #333;
+            text-align: center;
+            max-width: 110px;
+            line-height: 1.4;
+            transition: color 0.5s ease;
+        }
+        .step.active .step-icon {
+            border-color: orangered;
+            background: rgba(255,69,0,0.12);
+            box-shadow: 0 0 20px rgba(255,69,0,0.4), 0 0 40px rgba(255,69,0,0.15);
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+        .step.active .step-icon i { color: orangered; }
+        .step.active .step-label { color: orangered; }
+        .step.active .step-desc { color: #aaa; }
+        .step.completed .step-icon { border-color: orangered; background: rgba(255,69,0,0.08); }
+        .step.completed .step-icon i { color: orangered; }
+        .step.completed .step-label { color: #ccc; }
+        .step.completed .step-desc { color: #666; }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(255,69,0,0.4), 0 0 40px rgba(255,69,0,0.15); }
+            50%       { box-shadow: 0 0 30px rgba(255,69,0,0.7), 0 0 60px rgba(255,69,0,0.3); }
+        }
+
+        /* Cart items inside result */
+        .order-items-list { margin-top: 28px; border-top: 1px solid #2a2a2a; padding-top: 20px; }
+        .order-items-list h4 {
+            font-size: 0.8rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 14px;
+        }
+        .order-item-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #1e1e1e;
+            font-size: 0.95rem;
+        }
+        .order-item-row span:first-child { color: #ccc; }
+        .order-item-row span:last-child  { color: orangered; }
+
+        /* ── Orders List View ── */
+        .orders-list-section {
+            width: 100%;
+            max-width: 1000px;
+            display: none;
+            animation: fadeSlideUp 0.5s ease forwards;
+        }
+        .orders-list-section.show { display: block; }
+        .orders-list-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid orangered;
+            padding-bottom: 16px;
+        }
+        .orders-list-header h2 {
+            font-size: 1.5rem;
+            color: #fff;
+            font-family: 'Lato', sans-serif;
+            font-weight: 700;
+        }
+        .toggle-search-btn {
+            padding: 10px 20px;
+            background: transparent;
+            border: 2px solid orangered;
+            color: orangered;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .toggle-search-btn:hover { background: orangered; color: #000; }
+        .orders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        .order-card {
+            background: #150d0d;
+            border: 2px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .order-card:hover {
+            border-color: orangered;
+            box-shadow: 0 0 20px rgba(255,69,0,0.3);
+            transform: translateY(-4px);
+        }
+        .order-card-status {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+        .order-card-status.pending { background: rgba(255,193,7,0.2); color: #ffc107; }
+        .order-card-status.preparing { background: rgba(33,150,243,0.2); color: #2196f3; }
+        .order-card-status.on-the-way { background: rgba(76,175,80,0.2); color: #4caf50; }
+        .order-card-status.delivered { background: rgba(76,175,80,0.2); color: #4caf50; }
+        .order-card h3 {
+            font-size: 1rem;
+            color: orangered;
+            margin-bottom: 8px;
+            font-weight: 700;
+            word-break: break-all;
+        }
+        .order-card p {
+            font-size: 0.9rem;
+            color: #aaa;
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        .order-card-price {
+            font-size: 1.1rem;
+            color: #fff;
+            font-weight: 700;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #2a2a2a;
+        }
+        .no-orders-message {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+            font-size: 1.1rem;
+        }
+        .no-orders-message i {
+            font-size: 3rem;
+            color: #444;
+            display: block;
+            margin-bottom: 16px;
+        }
+        .login-prompt {
+            width: 100%;
+            max-width: 600px;
+            background: rgba(255,69,0,0.1);
+            border: 2px solid orangered;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 40px;
+            display: none;
+        }
+        .login-prompt.show { display: block; }
+        .login-prompt h3 { font-size: 1.3rem; color: #fff; margin-bottom: 12px; }
+        .login-prompt p { color: #aaa; margin-bottom: 24px; }
+        .login-prompt-btns { display: flex; gap: 12px; justify-content: center; }
+        .login-prompt-btns a {
+            padding: 12px 28px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .login-prompt-btns .btn-primary { background: orangered; color: #fff; }
+        .login-prompt-btns .btn-primary:hover { background: #cc3700; }
+        .login-prompt-btns .btn-secondary { background: transparent; border: 2px solid orangered; color: orangered; }
+        .login-prompt-btns .btn-secondary:hover { background: orangered; color: #000; }
+
+        /* Responsive */
+        @media (max-width: 650px) {
+            .track-search-wrapper .heading { font-size: 2rem; }
+            .order-info-card { grid-template-columns: 1fr; }
+            .timeline { flex-direction: column; gap: 0; align-items: flex-start; }
+            .timeline::before { top: 0; bottom: 0; left: 28px; right: auto; width: 3px; height: auto; }
+            .timeline-progress-line { top: 0; left: 28px; width: 3px !important; height: 0%; transition: height 0.8s cubic-bezier(.4,0,.2,1); }
+            .step { flex-direction: row; align-items: flex-start; gap: 18px; padding: 16px 0; flex: unset; width: 100%; }
+            .step-icon { margin-bottom: 0; flex-shrink: 0; }
+            .step-label, .step-desc { text-align: left; max-width: none; }
+            .search-input-group { flex-direction: column; }
+            .search-input-group button { border-radius: 0; }
+            .track-tabs { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+    <header id="home" style="height: auto; padding-bottom: 0;">
+        <nav class="navbar" style="background-color: #000;">
+            <div class="logo">
+                <img src="img/log.png" alt="BURP">
+                <span>BURP Foodhub</span>
+            </div>
+            <ul class="nav_items" id="nav_links">
+                <div class="item">
+                    <li><a href="index.html#home">HOME</a></li>
+                    <li><a href="index.html#services">SERVICES</a></li>
+                    <li><a href="menu.html">MENU</a></li>
+                    <li><a href="index.html#showcase">SHOWCASE</a></li>
+                    <li><a href="track.html" class="active">TRACK ORDER</a></li>
+                    <li><a href="index.html#contact">CONTACT</a></li>
+                </div>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div id="navAuth"></div>
+                </div>
+            </ul>
+            <div class="nav_menu" id="menu_btn"><i class="ri-menu-line"></i></div>
+        </nav>
+    </header>
+
+    <section class="track-section">
+
+        <!-- Tabs Navigation -->
+        <div class="track-tabs" id="trackTabs">
+            <button class="track-tab active" id="tabTrack" data-tab="track">
+                <i class="ri-search-line"></i> Track Order
+            </button>
+            <button class="track-tab" id="tabMyOrders" data-tab="myorders">
+                <i class="ri-history-line"></i> My Orders
+            </button>
+        </div>
+
+        <!-- Login Prompt (if not logged in, shown in My Orders tab) -->
+        <div class="login-prompt" id="loginPrompt">
+            <h3>Login to View Order History</h3>
+            <p>Sign in to see all your past orders and track current deliveries.</p>
+            <div class="login-prompt-btns">
+                <a href="login.html?redirect=track.html" class="btn-primary">Login</a>
+                <a href="register.html?redirect=track.html" class="btn-secondary">Register</a>
+            </div>
+        </div>
+
+        <!-- Track by Number View -->
+        <div class="track-search-wrapper" id="trackSearchWrapper">
+            <h3 class="heading_1">Where's my food?</h3>
+            <h1 class="heading">Track Your <span>Order</span></h1>
+            <div class="search-input-group">
+                <input type="text" id="trackingInput" placeholder="BURP-XXXXX" maxlength="20" />
+                <button id="trackBtn"><i class="ri-search-line" style="margin-right: 8px;"></i>Track</button>
+            </div>
+            <p class="track-message" id="trackMessage"></p>
+        </div>
+
+        <!-- My Orders List View -->
+        <div class="orders-list-section" id="ordersListSection">
+            <div class="orders-list-header">
+                <h2>Your Order History</h2>
+                <button class="toggle-search-btn" id="toggleSearchBtn">
+                    <i class="ri-search-line"></i> Track by Number
+                </button>
+            </div>
+            <div class="orders-grid" id="ordersGrid"></div>
+        </div>
+
+        <!-- Order Detail View -->
+        <div class="track-result" id="trackResult">
+            <div class="order-info-card" id="orderInfoCard"></div>
+            <div class="timeline-wrapper">
+                <h3>Order Status</h3>
+                <div class="timeline" id="statusTimeline">
+                    <div class="timeline-progress-line" id="progressLine"></div>
+                    <div class="step" id="step-Pending">
+                        <div class="step-icon"><i class="ri-time-line"></i></div>
+                        <div><div class="step-label">Pending</div><div class="step-desc">Waiting for admin to verify your receipt</div></div>
+                    </div>
+                    <div class="step" id="step-Preparing">
+                        <div class="step-icon"><i class="ri-restaurant-line"></i></div>
+                        <div><div class="step-label">Preparing</div><div class="step-desc">Order confirmed — kitchen is cooking!</div></div>
+                    </div>
+                    <div class="step" id="step-On the Way">
+                        <div class="step-icon"><i class="ri-e-bike-2-line"></i></div>
+                        <div><div class="step-label">On the Way</div><div class="step-desc">Rider picked up your order</div></div>
+                    </div>
+                    <div class="step" id="step-Delivered">
+                        <div class="step-icon"><i class="ri-checkbox-circle-line"></i></div>
+                        <div><div class="step-label">Delivered</div><div class="step-desc">Enjoy your meal!</div></div>
+                    </div>
+                </div>
+                <div class="order-items-list" id="orderItemsList"></div>
+            </div>
+        </div>
+
+    </section>
+
+    <footer>
+        <div class="sec footer_container">
+            <div class="footer_col">
+                <div class="footer_logo logo"><img src="img/log.png" alt=""><span>BURP Foodhub</span></div>
+                <p class="footer_text">our job is to fill your tummy with delicious food and with fast and free delivery time.</p>
+                <ul class="footer_socials"><li><a href="#"><i class="ri-instagram-fill"></i></a></li><li><a href="#"><i class="ri-facebook-fill"></i></a></li><li><a href="#"><i class="ri-twitter-fill"></i></a></li></ul>
+            </div>
+            <div class="footer_col"><h4>Explore</h4><ul class="footer_links"><li><a href="index.html#home">Home</a></li><li><a href="index.html#services">Services</a></li><li><a href="index.html#showcase">Showcase</a></li><li><a href="menu.html">Menu</a></li></ul></div>
+            <div class="footer_col"><h4>Company</h4><ul class="footer_links"><li><a href="#">My BURP</a></li><li><a href="#">Partner</a></li><li><a href="#">FAQ</a></li><li><a href="#">Blog</a></li></ul></div>
+            <div class="footer_col"><h4>Support</h4><ul class="footer_links"><li><a href="#">Account</a></li><li><a href="#">Support Center</a></li><li><a href="#">Feedback</a></li><li><a href="index.html#contact">Contact Us</a></li></ul></div>
+        </div>
+        <div class="footer_bar">copyright @ 2026 BURP Foodhub. All right reserved.</div>
+    </footer>
+
+    <script src="index.js"></script>
+    <script>
+        const STATUSES = ['Pending', 'Preparing', 'On the Way', 'Delivered'];
+        const PROGRESS_MAP = { 'Pending': '0%', 'Preparing': '33%', 'On the Way': '66%', 'Delivered': '80%' };
+
+        // DOM Elements
+        const tabTrack = document.getElementById('tabTrack');
+        const tabMyOrders = document.getElementById('tabMyOrders');
+        const trackSearchWrapper = document.getElementById('trackSearchWrapper');
+        const ordersListSection = document.getElementById('ordersListSection');
+        const trackResult = document.getElementById('trackResult');
+        const trackingInput = document.getElementById('trackingInput');
+        const trackBtn = document.getElementById('trackBtn');
+        const trackMessage = document.getElementById('trackMessage');
+        const orderInfoCard = document.getElementById('orderInfoCard');
+        const progressLine = document.getElementById('progressLine');
+        const orderItemsList = document.getElementById('orderItemsList');
+        const ordersGrid = document.getElementById('ordersGrid');
+        const loginPrompt = document.getElementById('loginPrompt');
+        const toggleSearchBtn = document.getElementById('toggleSearchBtn');
+
+        function setMessage(msg, type = '') {
+            trackMessage.textContent = msg;
+            trackMessage.className = 'track-message ' + type;
+        }
+
+        function formatDate(dateStr) {
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('en-PH', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+        }
+
+        function renderTimeline(status) {
+            const activeIndex = STATUSES.indexOf(status);
+            STATUSES.forEach((s, i) => {
+                const step = document.getElementById('step-' + s);
+                if (!step) return;
+                step.classList.remove('active', 'completed');
+                if (i < activeIndex) step.classList.add('completed');
+                if (i === activeIndex) step.classList.add('active');
+            });
+            setTimeout(() => { progressLine.style.width = PROGRESS_MAP[status] || '0%'; }, 100);
+        }
+
+        function getStatusClass(status) {
+            const map = { 'Pending': 'pending', 'Preparing': 'preparing', 'On the Way': 'on-the-way', 'Delivered': 'delivered' };
+            return map[status] || 'pending';
+        }
+
+        // ── Tab Switching ──
+        function showTab(tab) {
+            if (tab === 'track') {
+                tabTrack.classList.add('active');
+                tabMyOrders.classList.remove('active');
+                trackSearchWrapper.style.display = 'block';
+                ordersListSection.classList.remove('show');
+                trackResult.style.display = 'none';
+                loginPrompt.classList.remove('show');
+            } else {
+                tabTrack.classList.remove('active');
+                tabMyOrders.classList.add('active');
+                trackSearchWrapper.style.display = 'none';
+                trackResult.style.display = 'none';
+                ordersListSection.classList.add('show');
+                loginPrompt.classList.remove('show');
+                loadMyOrders();
+            }
+        }
+
+        tabTrack.addEventListener('click', () => showTab('track'));
+        tabMyOrders.addEventListener('click', () => {
+            if (!Auth.isLoggedIn()) {
+                showTab('track');
+                loginPrompt.classList.add('show');
+                return;
+            }
+            showTab('myorders');
+        });
+        toggleSearchBtn.addEventListener('click', () => showTab('track'));
+
+        // ── Load My Orders ──
+        async function loadMyOrders() {
+            if (!Auth.isLoggedIn()) {
+                loginPrompt.classList.add('show');
+                ordersGrid.innerHTML = '';
+                return;
+            }
+
+            const customer = Auth.getCustomer();
+            if (!customer?.email) {
+                loginPrompt.classList.add('show');
+                ordersGrid.innerHTML = '';
+                return;
+            }
+
+            loginPrompt.classList.remove('show');
+            ordersGrid.innerHTML = '<div class="no-orders-message" style="grid-column: 1/-1;"><i class="ri-loader-4-line" style="animation: spin 1s linear infinite;"></i><p>Loading your orders...</p></div>';
+
+            try {
+                const res = await fetch('../src/track_order.php?mode=all&email=' + encodeURIComponent(customer.email));
+                const data = await res.json();
+
+                if (data.success) {
+                    displayOrdersList(data.orders || []);
+                } else {
+                    ordersGrid.innerHTML = '<div class="no-orders-message" style="grid-column: 1/-1;"><i class="ri-inbox-line"></i><p>No orders found</p></div>';
+                }
+            } catch (err) {
+                console.error('Error loading orders:', err);
+                ordersGrid.innerHTML = '<div class="no-orders-message" style="grid-column: 1/-1;"><i class="ri-alert-line"></i><p>Error loading orders. Please try again.</p></div>';
+            }
+        }
+
+        function displayOrdersList(orders) {
+            if (!orders || orders.length === 0) {
+                ordersGrid.innerHTML = '<div class="no-orders-message" style="grid-column: 1/-1;"><i class="ri-inbox-line"></i><p>You have no orders yet. Start ordering now!</p></div>';
+                return;
+            }
+
+            ordersGrid.innerHTML = orders.map(order => `
+                <div class="order-card" onclick="showOrderDetails('${order.tracking_number}')">
+                    <span class="order-card-status ${getStatusClass(order.status)}">${order.status}</span>
+                    <h3>${order.tracking_number}</h3>
+                    <p><span>Date:</span> <span>${formatDate(order.order_date).split(',')[0]}</span></p>
+                    <p><span>Items:</span> <span>${order.cart_items?.length || 0}</span></p>
+                    <div class="order-card-price">₱${parseFloat(order.total_price).toFixed(2)}</div>
+                </div>
+            `).join('');
+        }
+
+        function showOrderDetails(trackingNumber) {
+            doTrack(trackingNumber);
+            showTab('track');
+        }
+
+        function doTrack(trackingNum = null) {
+            const val = trackingNum || trackingInput.value.trim();
+            if (!val) { setMessage('Please enter a tracking number.', 'error'); return; }
+
+            setMessage('Searching...', 'loading');
+            trackResult.style.display = 'none';
+            trackBtn.disabled = true;
+
+            fetch('../src/track_order.php?mode=search&tracking=' + encodeURIComponent(val))
+                .then(res => res.json())
+                .then(data => {
+                    trackBtn.disabled = false;
+                    if (data.error) {
+                        setMessage(data.error, 'error');
+                    } else {
+                        setMessage('');
+                        const order = data.order;
+                        orderInfoCard.innerHTML = `
+                            <div class="info-row"><span class="info-label">Tracking Number</span><span class="info-value highlight">${order.tracking_number}</span></div>
+                            <div class="info-row"><span class="info-label">Customer</span><span class="info-value">${order.customer_name}</span></div>
+                            <div class="info-row"><span class="info-label">Order Date</span><span class="info-value">${formatDate(order.order_date)}</span></div>
+                            <div class="info-row"><span class="info-label">Total Paid</span><span class="info-value highlight">₱${parseFloat(order.total_price).toFixed(2)}</span></div>
+                        `;
+                        renderTimeline(order.status);
+
+                        let html = '<h4>Items Ordered</h4>';
+                        order.cart_items?.forEach(item => {
+                            html += `<div class="order-item-row"><span>${item.quantity}x ${item.name}</span><span>₱${(parseFloat(item.price)*item.quantity).toFixed(2)}</span></div>`;
+                        });
+                        orderItemsList.innerHTML = html;
+
+                        trackResult.style.display = 'block';
+                    }
+                })
+                .catch(err => {
+                    trackBtn.disabled = false;
+                    setMessage('Server error. Please try again.', 'error');
+                });
+        }
+
+        trackBtn.addEventListener('click', () => doTrack());
+
+        // Initialize: check auth and show appropriate tab
+        document.addEventListener('DOMContentLoaded', async () => {
+            await Auth.check();
+            Auth.updateNav();
+
+            // If URL has tracking param, go to track tab and search
+            const urlParams = new URLSearchParams(window.location.search);
+            const trackingParam = urlParams.get('tracking');
+            if (trackingParam) {
+                trackingInput.value = trackingParam;
+                showTab('track');
+                doTrack(trackingParam);
+            } else if (Auth.isLoggedIn()) {
+                // Logged in users see My Orders tab by default
+                showTab('myorders');
+            } else {
+                showTab('track');
+            }
+        });
+    </script>
+</body>
+</html>

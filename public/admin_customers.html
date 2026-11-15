@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer List - BURP Admin</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="admin.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet" />
+    
+    <script>
+        fetch('admin_check_auth.php')
+            .then(res => res.json())
+            .then(data => {
+                if (!data.logged_in) {
+                    window.location.replace('admin_login.html');
+                } else {
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const profileName = document.querySelector('.profile-info span');
+                        if (profileName) profileName.textContent = data.username;
+                    });
+                }
+            })
+            .catch(err => {
+                window.location.replace('admin_login.html');
+            });
+    </script>
+</head>
+<body class="admin-body">
+
+    <aside class="admin-sidebar">
+        <div class="sidebar-logo">
+            <img src="img/log.png" alt="BURP Logo">
+            <span>BURP Admin</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="admin.html"><i class="ri-dashboard-line"></i> Dashboard</a></li>
+            <li><a href="admin_orders.html"><i class="ri-list-ordered"></i> Orders</a></li>
+            <li><a href="admin_menu.html"><i class="ri-restaurant-line"></i> Menu Management</a></li>
+            <li><a href="admin_customers.html" class="active"><i class="ri-group-line"></i> Customers</a></li>
+            <li><a href="#"><i class="ri-settings-4-line"></i> Settings</a></li>
+        </ul>
+        <div class="sidebar-logout">
+            <a href="#" onclick="adminLogout(event)"><i class="ri-logout-box-r-line"></i> Logout</a>
+        </div>
+    </aside>
+
+    <main class="admin-main">
+        <div class="admin-header">
+            <div class="header-search">
+                <i class="ri-search-line"></i>
+                <input type="text" id="customerSearchInput" placeholder="Search customers...">
+            </div>
+            <div class="header-profile">
+                <i class="ri-notification-3-line"></i>
+                <div class="profile-info">
+                    <img src="https://via.placeholder.com/40/ff4500/ffffff?text=A" alt="Admin">
+                    <span>Admin Profile</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-content">
+            <h1 class="admin-title">Customer Database</h1>
+
+            <div class="table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Customer Name</th>
+                            <th>Email Address</th>
+                            <th>Mobile</th>
+                            <th>Location</th>
+                            <th style="text-align: center;">Total Orders</th>
+                        </tr>
+                    </thead>
+                    <tbody id="customerTableBody">
+                        <tr><td colspan="5" style="text-align: center;">Loading customer data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const tableBody = document.getElementById('customerTableBody');
+        const searchInput = document.getElementById('customerSearchInput');
+        let allCustomers = [];
+
+        function fetchCustomers() {
+            fetch('admin_get_customers.php')
+                .then(res => res.json())
+                .then(data => {
+                    allCustomers = data;
+                    renderCustomerTable(allCustomers);
+                })
+                .catch(err => {
+                    tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">Failed to load customers.</td></tr>';
+                });
+        }
+
+        function renderCustomerTable(customersToRender) {
+            tableBody.innerHTML = ''; 
+            if (customersToRender.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No customers found.</td></tr>';
+                return;
+            }
+
+            customersToRender.forEach(customer => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight: bold; color: #fff;">${customer.customer_name}</td>
+                    <td style="color: #ccc; text-transform: lowercase;">${customer.email}</td>
+                    <td style="color: orangered;">${customer.mobile}</td>
+                    <td style="color: #888; font-size: 0.9rem;">${customer.location}</td>
+                    <td style="text-align: center;">
+                        <span class="badge" style="font-size: 1rem; padding: 4px 12px;">${customer.total_orders}</span>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        searchInput.addEventListener('input', function() {
+            const filterText = this.value.toLowerCase();
+            const filteredCustomers = allCustomers.filter(customer => {
+                return (
+                    customer.customer_name.toLowerCase().includes(filterText) ||
+                    customer.email.toLowerCase().includes(filterText) ||
+                    customer.mobile.includes(filterText)
+                );
+            });
+            renderCustomerTable(filteredCustomers);
+        });
+
+        fetchCustomers();
+
+        // LOGOUT LOGIC
+        function adminLogout(e) {
+            e.preventDefault();
+            fetch('admin_logout.php')
+                .then(() => {
+                    window.location.href = 'admin_login.html';
+                });
+        }
+    </script>
+</body>
+</html>

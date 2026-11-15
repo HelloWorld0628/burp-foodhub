@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BURP Admin Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="admin.css"> 
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet" />
+    <script>
+        fetch('admin_check_auth.php')
+            .then(res => res.json())
+            .then(data => {
+                if (!data.logged_in) {
+                    // Kick them back to the login screen if they aren't logged in!
+                    window.location.replace('admin_login.html');
+                } else {
+                    // Automatically update the profile name in the top right corner
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const profileName = document.querySelector('.profile-info span');
+                        if (profileName) profileName.textContent = data.username;
+                    });
+                }
+            })
+            .catch(err => {
+                window.location.replace('admin_login.html');
+            });
+    </script>
+</head>
+<body class="admin-body">
+
+    <aside class="admin-sidebar">
+        <div class="sidebar-logo">
+            <img src="img/log.png" alt="BURP Logo">
+            <span>BURP Admin</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="admin.html" class="active"><i class="ri-dashboard-line"></i> Dashboard</a></li>
+            <li><a href="admin_orders.html"><i class="ri-list-ordered"></i> Orders</a></li>
+            <li><a href="admin_menu.html"><i class="ri-restaurant-line"></i> Menu Management</a></li>
+            <li><a href="admin_customers.html"><i class="ri-group-line"></i> Customers</a></li>
+            <li><a href="#"><i class="ri-settings-4-line"></i> Settings</a></li>
+        </ul>
+        <div class="sidebar-logout">
+            <a href="#" onclick="adminLogout(event)"><i class="ri-logout-box-r-line"></i> Logout</a>
+        </div>
+    </aside>
+
+    <main class="admin-main">
+        <div class="admin-header">
+            <div class="header-search">
+                <i class="ri-search-line"></i>
+                <input type="text" placeholder="Search tracking number...">
+            </div>
+            <div class="header-profile">
+                <i class="ri-notification-3-line"></i>
+                <div class="profile-info">
+                    <img src="https://via.placeholder.com/40/ff4500/ffffff?text=A" alt="Admin">
+                    <span>Admin Profile</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-content">
+            <h1 class="admin-title">Dashboard Overview</h1>
+
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="ri-wallet-3-line"></i></div>
+                    <div class="stat-details">
+                        <h3>Total Revenue</h3>
+                        <h2 id="dashTotalRevenue">₱0.00</h2>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><i class="ri-shopping-bag-3-line"></i></div>
+                    <div class="stat-details">
+                        <h3>Total Orders</h3>
+                        <h2 id="dashTotalOrders">0</h2>
+                    </div>
+                </div>
+                <div class="stat-card" style="border-color: orangered;">
+                    <div class="stat-icon" style="color: orangered;"><i class="ri-time-line"></i></div>
+                    <div class="stat-details">
+                        <h3>Pending Orders</h3>
+                        <h2 id="dashPendingOrders" style="color: orangered;">0</h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <div class="table-header">
+                    <h2>Recent Orders</h2>
+                    <button class="btn btn-sm" onclick="window.location.href='admin_orders.html'">View All</button>
+                </div>
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Tracking No.</th>
+                            <th>Customer</th>
+                            <th>Total Amount</th>
+                            <th>Date & Time</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashboardOrderTableBody">
+                        <tr><td colspan="6" style="text-align: center;">Loading recent orders...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch('admin_get_orders.php')
+                .then(res => res.json())
+                .then(data => {
+                    // 1. Calculate and update dashboard stats
+                    const totalOrders = data.length;
+                    const pendingOrders = data.filter(o => o.status === 'Pending').length;
+                    const revenue = data.reduce((sum, o) => sum + parseFloat(o.total_price), 0);
+
+                    document.getElementById('dashTotalRevenue').textContent = '₱' + revenue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                    document.getElementById('dashTotalOrders').textContent = totalOrders;
+                    document.getElementById('dashPendingOrders').textContent = pendingOrders;
+
+                    // 2. Populate Recent Orders Table (limit to top 5)
+                    const tbody = document.getElementById('dashboardOrderTableBody');
+                    tbody.innerHTML = '';
+                    const recentOrders = data.slice(0, 5);
+
+                    if(recentOrders.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No recent orders</td></tr>';
+                        return;
+                    }
+
+                    recentOrders.forEach(order => {
+                        let badgeClass = 'pending';
+                        let statusText = order.status || 'Pending';
+                        if (statusText.toLowerCase() === 'preparing') badgeClass = 'preparing';
+                        if (statusText.toLowerCase() === 'delivered') badgeClass = 'delivered';
+                        if (statusText.toLowerCase() === 'on the way') badgeClass = 'on-the-way';
+
+                        const dateObj = new Date(order.order_date);
+                        const formattedDate = dateObj.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+                        tbody.innerHTML += `
+                            <tr>
+                                <td style="color: orangered; font-weight: bold;">${order.tracking_number}</td>
+                                <td>${order.customer_name}</td>
+                                <td>₱${parseFloat(order.total_price).toFixed(2)}</td>
+                                <td>${formattedDate}</td>
+                                <td><span class="status-badge ${badgeClass}">${statusText}</span></td>
+                                <td><button class="btn-action" onclick="window.location.href='admin_orders.html'"><i class="ri-eye-line"></i> View</button></td>
+                            </tr>
+                        `;
+                    });
+                })
+                .catch(err => {
+                    console.error('Error fetching dashboard orders:', err);
+                    document.getElementById('dashboardOrderTableBody').innerHTML = '<tr><td colspan="6" style="text-align: center; color: red;">Failed to load orders.</td></tr>';
+                });
+        });
+    </script>
+</body>
+</html>

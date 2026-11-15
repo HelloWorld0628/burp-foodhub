@@ -1,0 +1,6 @@
+Options -Indexes
+RewriteEngine On
+RewriteRule ^(?:database|\.vscode|\.git)(?:/|$) - [F,NC,L]
+RewriteRule ^$ public/index.html [L]
+RewriteRule ^public/ - [L]
+RewriteRule ^(.+)$ public/$1 [L]

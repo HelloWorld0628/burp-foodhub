@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driver Registration - BURP Foodhub</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet" />
+    <style>
+        .delivery-auth-section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 120px 20px 60px;
+        }
+        .delivery-auth-card {
+            background: #150d0d;
+            border: 2px solid orangered;
+            border-radius: 10px;
+            padding: 40px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: rgba(0,0,0,0.5) 0 10px 25px;
+        }
+        .delivery-auth-card img { 
+            width: 80px; 
+            display: block; 
+            margin: 0 auto 20px; 
+        }
+        .delivery-auth-card h2 { 
+            color: #fff; 
+            font-family: 'Playwrite CU', cursive; 
+            font-size: 2rem; 
+            margin-bottom: 8px; 
+            text-align: center; 
+        }
+        .delivery-auth-card .subtitle {
+            color: orangered;
+            text-align: center;
+            font-size: 0.9rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 24px;
+        }
+        .delivery-auth-card p { 
+            color: #888; 
+            text-align: center; 
+            margin-bottom: 30px; 
+            font-size: 0.95rem;
+        }
+        .form-group { 
+            margin-bottom: 20px; 
+        }
+        .form-group label { 
+            display: block; 
+            color: #ccc; 
+            margin-bottom: 8px; 
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        .form-group input, .form-group select { 
+            width: 100%; 
+            padding: 15px; 
+            background: #222; 
+            border: 1px solid #444; 
+            border-radius: 5px; 
+            color: white; 
+            font-size: 1rem; 
+            text-transform: none; 
+            outline: none; 
+            transition: 0.3s; 
+            box-sizing: border-box;
+        }
+        .form-group input:focus, .form-group select:focus { 
+            border-color: orangered;
+            box-shadow: 0 0 10px rgba(255,69,0,0.3);
+        }
+        .form-group input::placeholder {
+            color: #555;
+        }
+        .form-group select {
+            color: #ccc;
+            cursor: pointer;
+        }
+        .form-group select option {
+            background: #222;
+            color: white;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .form-row .form-group {
+            margin-bottom: 0;
+        }
+        .btn-submit {
+            width: 100%;
+            padding: 15px;
+            background: orangered;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        .btn-submit:hover {
+            background: #cc3700;
+            box-shadow: 0 0 15px rgba(255,69,0,0.5);
+        }
+        .btn-submit:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        .auth-link { 
+            text-align: center; 
+            margin-top: 20px; 
+            display: block; 
+            color: #ccc; 
+            text-decoration: none; 
+            transition: 0.3s; 
+            font-size: 0.9rem;
+        }
+        .auth-link span { 
+            color: orangered; 
+            font-weight: bold; 
+        }
+        .auth-link:hover span { 
+            text-decoration: underline; 
+        }
+        .message {
+            margin-bottom: 20px;
+            padding: 12px 16px;
+            border-radius: 5px;
+            text-align: center;
+            display: none;
+            font-weight: 600;
+        }
+        .message.error {
+            background: rgba(255, 107, 107, 0.2);
+            color: #ff6b6b;
+            border: 1px solid #ff6b6b;
+            display: block;
+        }
+        .message.success {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4caf50;
+            border: 1px solid #4caf50;
+            display: block;
+        }
+        .message.loading {
+            background: rgba(33, 150, 243, 0.2);
+            color: #2196f3;
+            border: 1px solid #2196f3;
+            display: block;
+        }
+        @media (max-width: 600px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header id="home" style="height: auto; padding-bottom: 0;">
+        <nav class="navbar" style="background-color: #000;">
+            <div class="logo">
+                <img src="img/log.png" alt="BURP">
+                <span>BURP Foodhub</span>
+            </div>
+            <ul class="nav_items" id="nav_links">
+                <div class="item">
+                    <li><a href="index.html">HOME</a></li>
+                    <li><a href="menu.html">MENU</a></li>
+                    <li><a href="index.html#contact">CONTACT</a></li>
+                </div>
+            </ul>
+            <div class="nav_menu" id="menu_btn"><i class="ri-menu-line"></i></div>
+        </nav>
+    </header>
+
+    <section class="delivery-auth-section">
+        <div class="delivery-auth-card">
+            <img src="img/log.png" alt="BURP Logo">
+            <h2>Join Our Team</h2>
+            <div class="subtitle">🚚 Driver Registration</div>
+            <p>Register as a BURP delivery driver</p>
+            
+            <div class="message" id="messageBox"></div>
+
+            <form id="driverRegisterForm">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="regName" required placeholder="Your full name">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="regEmail" required placeholder="your@email.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Phone</label>
+                        <input type="tel" id="regPhone" required placeholder="09xxxxxxxxx">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Username</label>
+                        <input type="text" id="regUsername" required placeholder="Unique username">
+                    </div>
+                    <div class="form-group">
+                        <label>Vehicle Type</label>
+                        <select id="regVehicle" required>
+                            <option value="">Select vehicle</option>
+                            <option value="Motorcycle">Motorcycle</option>
+                            <option value="Bicycle">Bicycle</option>
+                            <option value="Car">Car</option>
+                            <option value="Van">Van</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="regPassword" required placeholder="••••••••">
+                    </div>
+                    <div class="form-group">
+                        <label>Confirm Password</label>
+                        <input type="password" id="regConfirmPassword" required placeholder="••••••••">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-submit" id="registerBtn">Create Account</button>
+                <a href="delivery_login.html" class="auth-link">Already a driver? <span>Login here</span></a>
+            </form>
+        </div>
+    </section>
+
+    <footer>
+        <div class="sec footer_container">
+            <div class="footer_col">
+                <div class="footer_logo logo">
+                    <img src="img/log.png" alt="">
+                    <span>BURP Foodhub</span>
+                </div>
+                <p class="footer_text">our job is to fill your tummy with delicious food and with fast and free delivery time.</p>
+                <ul class="footer_socials">
+                    <li><a href="#"><i class="ri-instagram-fill"></i></a></li>
+                    <li><a href="#"><i class="ri-facebook-fill"></i></a></li>
+                    <li><a href="#"><i class="ri-twitter-fill"></i></a></li>
+                </ul>
+            </div>
+            <div class="footer_col">
+                <h4>Quick Links</h4>
+                <ul class="footer_links">
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="menu.html">Menu</a></li>
+                    <li><a href="track.html">Track Order</a></li>
+                </ul>
+            </div>
+            <div class="footer_col">
+                <h4>Driver Portal</h4>
+                <ul class="footer_links">
+                    <li><a href="delivery_login.html">Driver Login</a></li>
+                    <li><a href="delivery_register.html">Driver Register</a></li>
+                    <li><a href="#">Support</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer_bar">copyright @ 2026 BURP Foodhub. All right reserved.</div>
+    </footer>
+
+    <script src="index.js"></script>
+    <script>
+        const driverRegisterForm = document.getElementById('driverRegisterForm');
+        const messageBox = document.getElementById('messageBox');
+        const registerBtn = document.getElementById('registerBtn');
+
+        function showMessage(msg, type) {
+            messageBox.textContent = msg;
+            messageBox.className = 'message ' + type;
+            if (type === 'error' || type === 'success') {
+                setTimeout(() => { messageBox.className = 'message'; }, 5000);
+            }
+        }
+
+        driverRegisterForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('regName').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const phone = document.getElementById('regPhone').value.trim();
+            const username = document.getElementById('regUsername').value.trim();
+            const vehicle = document.getElementById('regVehicle').value;
+            const password = document.getElementById('regPassword').value;
+            const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+            if (!name || !email || !phone || !username || !vehicle || !password) {
+                showMessage('Please fill in all fields.', 'error');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showMessage('Passwords do not match.', 'error');
+                return;
+            }
+
+            if (password.length < 6) {
+                showMessage('Password must be at least 6 characters.', 'error');
+                return;
+            }
+
+            showMessage('Creating account...', 'loading');
+            registerBtn.disabled = true;
+
+            fetch('delivery_auth.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `action=register&name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}&phone=${encodeURIComponent(phone)}&username=${encodeURIComponent(username)}&vehicle=${encodeURIComponent(vehicle)}&password=${encodeURIComponent(password)}`
+            })
+            .then(res => res.json())
+            .then(data => {
+                registerBtn.disabled = false;
+                if (data.success) {
+                    showMessage('Registration successful! Redirecting to login...', 'success');
+                    setTimeout(() => { window.location.href = 'delivery_login.html'; }, 1500);
+                } else {
+                    showMessage(data.error || 'Registration failed. Please try again.', 'error');
+                }
+            })
+            .catch(err => {
+                registerBtn.disabled = false;
+                showMessage('Server error. Please try again.', 'error');
+            });
+        });
+
+        // Check if already logged in
+        window.addEventListener('load', () => {
+            const driverProfile = localStorage.getItem('burpDriverProfile');
+            if (driverProfile) {
+                window.location.href = 'delivery_dashboard.html';
+            }
+        });
+    </script>
+</body>
+</html>

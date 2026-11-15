@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Orders - BURP Admin</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="admin.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet" />
+    <style>
+        /* Modal Styles for Receipt Viewing */
+        .receipt-modal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; 
+            z-index: 3000; align-items: center; justify-content: center; flex-direction: column;
+        }
+        .receipt-content {
+            background: #150d0d; border: 2px solid orangered; padding: 20px;
+            border-radius: 10px; max-width: 90%; max-height: 90vh; text-align: center; position: relative;
+        }
+        .receipt-content img {
+            max-width: 100%; max-height: 70vh; object-fit: contain; border-radius: 5px;
+        }
+        .close-receipt {
+            position: absolute; top: -15px; right: -15px; background: #000; color: orangered;
+            font-size: 30px; border-radius: 50%; cursor: pointer; border: 2px solid orangered;
+            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+        }
+    </style>
+
+    <script>
+        fetch('admin_check_auth.php')
+            .then(res => res.json())
+            .then(data => {
+                if (!data.logged_in) {
+                    window.location.replace('admin_login.html');
+                } else {
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const profileName = document.querySelector('.profile-info span');
+                        if (profileName) profileName.textContent = data.username;
+                    });
+                }
+            })
+            .catch(err => {
+                window.location.replace('admin_login.html');
+            });
+    </script>
+</head>
+<body class="admin-body">
+
+    <aside class="admin-sidebar">
+        <div class="sidebar-logo">
+            <img src="img/log.png" alt="BURP Logo">
+            <span>BURP Admin</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="admin.html"><i class="ri-dashboard-line"></i> Dashboard</a></li>
+            <li><a href="admin_orders.html" class="active"><i class="ri-list-ordered"></i> Orders</a></li>
+            <li><a href="admin_menu.html"><i class="ri-restaurant-line"></i> Menu Management</a></li>
+            <li><a href="admin_customers.html"><i class="ri-group-line"></i> Customers</a></li>
+            <li><a href="#"><i class="ri-settings-4-line"></i> Settings</a></li>
+        </ul>
+        <div class="sidebar-logout">
+            <a href="#" onclick="adminLogout(event)"><i class="ri-logout-box-r-line"></i> Logout</a>
+        </div>
+    </aside>
+
+    <main class="admin-main">
+        <div class="admin-header">
+            <div class="header-search">
+                <i class="ri-search-line"></i>
+                <input type="text" id="orderSearchInput" placeholder="Search by tracking or customer...">
+            </div>
+            <div class="header-profile">
+                <i class="ri-notification-3-line"></i>
+                <div class="profile-info">
+                    <img src="https://via.placeholder.com/40/ff4500/ffffff?text=A" alt="Admin">
+                    <span>Admin Profile</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-content">
+            <h1 class="admin-title">Order Management</h1>
+
+            <div class="table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Tracking No.</th>
+                            <th>Customer</th>
+                            <th>Total Amount</th>
+                            <th>Date & Time</th>
+                            <th>Receipt</th>
+                            <th>Delivery Proof</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orderTableBody">
+                        <tr><td colspan="8" style="text-align: center;">Loading orders...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div class="receipt-modal" id="receiptModal">
+        <div class="receipt-content">
+            <div class="close-receipt" onclick="closeReceiptModal()"><i class="ri-close-line"></i></div>
+            <h3 style="color: #fff; margin-bottom: 15px;" id="receiptOrderNumber">Payment Receipt</h3>
+            <img id="receiptImageDisplay" src="" alt="Receipt Image">
+        </div>
+    </div>
+
+    <div class="receipt-modal" id="deliveryProofModal">
+        <div class="receipt-content">
+            <div class="close-receipt" onclick="closeDeliveryProofModal()"><i class="ri-close-line"></i></div>
+            <h3 style="color: #fff; margin-bottom: 15px;">Proof of Delivery</h3>
+            <div style="color: #aaa; margin-bottom: 15px; font-size: 0.9rem;">
+                <span id="proofDriverName"></span> | <span id="proofUploadedAt"></span>
+            </div>
+            <img id="deliveryProofImageDisplay" src="" alt="Delivery Proof Image">
+        </div>
+    </div>
+
+    <script>
+        const tableBody = document.getElementById('orderTableBody');
+        const searchInput = document.getElementById('orderSearchInput');
+        const receiptModal = document.getElementById('receiptModal');
+        const receiptImageDisplay = document.getElementById('receiptImageDisplay');
+        const receiptOrderNumber = document.getElementById('receiptOrderNumber');
+        const deliveryProofModal = document.getElementById('deliveryProofModal');
+        const deliveryProofImageDisplay = document.getElementById('deliveryProofImageDisplay');
+        const proofDriverName = document.getElementById('proofDriverName');
+        const proofUploadedAt = document.getElementById('proofUploadedAt');
+
+        let allOrders = [];
+
+        function fetchOrders() {
+            fetch('admin_get_orders.php')
+                .then(res => res.json())
+                .then(data => {
+                    allOrders = data;
+                    renderTable(allOrders);
+                })
+                .catch(err => {
+                    console.error('Error fetching orders:', err);
+                    tableBody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: red;">Failed to load orders.</td></tr>';
+                });
+        }
+
+        function renderTable(ordersToRender) {
+            tableBody.innerHTML = ''; 
+            if (ordersToRender.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No orders found.</td></tr>';
+                return;
+            }
+
+            ordersToRender.forEach(order => {
+                let badgeClass = 'pending';
+                let statusText = order.status || 'Pending';
+                
+                if (statusText.toLowerCase() === 'preparing') badgeClass = 'preparing';
+                if (statusText.toLowerCase() === 'delivered') badgeClass = 'delivered';
+                if (statusText.toLowerCase() === 'on the way') badgeClass = 'on-the-way';
+
+                const dateObj = new Date(order.order_date);
+                const formattedDate = dateObj.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+                let actionButton = '';
+                if (statusText === 'Pending') {
+                    actionButton = `<button class="btn-action" onclick="updateStatus(${order.id}, 'Pending')"><i class="ri-check-line"></i> Verify & Cook</button>`;
+                } else if (statusText === 'Preparing') {
+                    actionButton = `<span style="color:#aaa; font-size:0.9rem;">Waiting for Driver...</span>`;
+                } else {
+                    actionButton = `<span style="color:#4caf50; font-size:0.9rem;"><i class="ri-check-double-line"></i> Complete</span>`;
+                }
+
+                // Delivery Proof Button Logic
+                let proofButton = `<span style="color:#555; font-size:0.85rem;">N/A</span>`;
+                if (order.delivery_proof_image) {
+                    proofButton = `<button class="btn-action" style="font-size: 0.8rem; padding: 4px 8px;" onclick="viewDeliveryProof('${order.delivery_proof_image}', '${order.driver_name}', '${order.id}')"><i class="ri-camera-lens-line"></i> View Proof</button>`;
+                }
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="color: orangered; font-weight: bold;">${order.tracking_number}</td>
+                    <td>
+                        <div>${order.customer_name}</div>
+                        <div style="font-size: 0.8rem; color: #888;">${order.location}</div>
+                    </td>
+                    <td>₱${parseFloat(order.total_price).toFixed(2)}</td>
+                    <td>${formattedDate}</td>
+                    <td><button class="btn-action" style="font-size: 0.8rem; padding: 4px 8px;" onclick="viewReceipt('${order.receipt_image}', '${order.tracking_number}')"><i class="ri-image-line"></i> Receipt</button></td>
+                    <td>${proofButton}</td>
+                    <td><span class="status-badge ${badgeClass}">${statusText}</span></td>
+                    <td>${actionButton}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        searchInput.addEventListener('input', function() {
+            const filterText = this.value.toLowerCase();
+            const filteredOrders = allOrders.filter(order => {
+                return (
+                    order.tracking_number.toLowerCase().includes(filterText) ||
+                    order.customer_name.toLowerCase().includes(filterText)
+                );
+            });
+            renderTable(filteredOrders);
+        });
+
+        window.updateStatus = function(orderId, currentStatus) {
+            let nextStatus = '';
+            if (currentStatus === 'Pending') nextStatus = 'Preparing';
+            else return; 
+
+            const formData = new FormData();
+            formData.append('id', orderId);
+            formData.append('status', nextStatus);
+
+            fetch('admin_update_status.php', { method: 'POST', body: formData })
+                .then(response => response.text())
+                .then(data => {
+                    alert('Order verified and marked as Preparing!');
+                    fetchOrders(); 
+                });
+        }
+
+        // Receipt Modal Logic
+        window.viewReceipt = function(imageName, trackingNumber) {
+            if (!imageName) {
+                alert("No receipt was uploaded for this order.");
+                return;
+            }
+            receiptImageDisplay.src = 'payments_img/' + imageName;
+            receiptOrderNumber.textContent = 'Tracking: ' + trackingNumber;
+            receiptModal.style.display = 'flex';
+        }
+
+        window.closeReceiptModal = function() {
+            receiptModal.style.display = 'none';
+            receiptImageDisplay.src = ''; 
+        }
+
+        // Delivery Proof Logic
+        window.viewDeliveryProof = function(imagePath, driverName, orderId) {
+            deliveryProofImageDisplay.src = imagePath;
+            proofDriverName.textContent = driverName || 'Unknown';
+            
+            fetch('delivery_complete.php?action=getProof&order_id=' + orderId)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.proof) {
+                        const uploadDate = new Date(data.proof.uploaded_at).toLocaleString('en-US', { 
+                            month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+                        });
+                        proofUploadedAt.textContent = uploadDate;
+                    }
+                })
+                .catch(err => console.error('Error fetching proof:', err));
+            
+            deliveryProofModal.style.display = 'flex';
+        }
+
+        window.closeDeliveryProofModal = function() {
+            deliveryProofModal.style.display = 'none';
+            deliveryProofImageDisplay.src = '';
+        }
+
+        // Close modal if clicking outside the image
+        window.addEventListener('click', function(e) {
+            if (e.target === receiptModal) closeReceiptModal();
+            if (e.target === deliveryProofModal) closeDeliveryProofModal();
+        });
+
+        fetchOrders();
+
+        // LOGOUT LOGIC
+        function adminLogout(e) {
+            e.preventDefault();
+            fetch('admin_logout.php')
+                .then(() => {
+                    window.location.href = 'admin_login.html';
+                });
+        }
+    </script>
+</body>
+</html>

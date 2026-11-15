@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu Management - BURP Admin</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="admin.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet" />
+    <style>
+        .menu-thumbnail {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 5px;
+            border: 1px solid #333;
+        }
+        /* Modal Styles */
+        .admin-modal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; 
+            z-index: 3000; align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background: #150d0d; border: 2px solid orangered; padding: 30px; 
+            border-radius: 10px; width: 100%; max-width: 500px; position: relative;
+        }
+        .close-modal {
+            position: absolute; top: 15px; right: 20px; font-size: 25px; 
+            color: orangered; cursor: pointer;
+        }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: #aaa; font-size: 0.9rem; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 10px; background: #222; border: 1px solid #444; 
+            color: #fff; border-radius: 5px; font-family: 'Lato', sans-serif;
+        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: orangered; outline: none;
+        }
+    </style>
+
+    <script>
+        fetch('admin_check_auth.php')
+            .then(res => res.json())
+            .then(data => {
+                if (!data.logged_in) {
+                    window.location.replace('admin_login.html');
+                } else {
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const profileName = document.querySelector('.profile-info span');
+                        if (profileName) profileName.textContent = data.username;
+                    });
+                }
+            })
+            .catch(err => {
+                window.location.replace('admin_login.html');
+            });
+    </script>
+</head>
+<body class="admin-body">
+
+    <aside class="admin-sidebar">
+        <div class="sidebar-logo">
+            <img src="img/log.png" alt="BURP Logo">
+            <span>BURP Admin</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="admin.html"><i class="ri-dashboard-line"></i> Dashboard</a></li>
+            <li><a href="admin_orders.html"><i class="ri-list-ordered"></i> Orders</a></li>
+            <li><a href="admin_menu.html" class="active"><i class="ri-restaurant-line"></i> Menu Management</a></li>
+            <li><a href="admin_customers.html"><i class="ri-group-line"></i> Customers</a></li>
+            <li><a href="#"><i class="ri-settings-4-line"></i> Settings</a></li>
+        </ul>
+        <div class="sidebar-logout">
+            <a href="#" onclick="adminLogout(event)"><i class="ri-logout-box-r-line"></i> Logout</a>
+        </div>
+    </aside>
+
+    <main class="admin-main">
+        <div class="admin-header">
+            <div class="header-search">
+                <i class="ri-search-line"></i>
+                <input type="text" id="menuSearchInput" placeholder="Search menu items...">
+            </div>
+            <div class="header-profile">
+                <i class="ri-notification-3-line"></i>
+                <div class="profile-info">
+                    <img src="https://via.placeholder.com/40/ff4500/ffffff?text=A" alt="Admin">
+                    <span>Admin Profile</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h1 class="admin-title" style="margin-bottom: 0;">Menu List</h1>
+                <button class="btn" onclick="openAddModal()" style="display: flex; align-items: center; gap: 8px;">
+                    <i class="ri-add-line"></i> Add New Item
+                </button>
+            </div>
+
+            <div class="table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Image</th>
+                            <th>Item Name</th>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Price</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="menuTableBody">
+                        <tr><td colspan="6" style="text-align: center;">Loading menu data...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div class="admin-modal" id="menuModal">
+        <div class="modal-content">
+            <i class="ri-close-line close-modal" onclick="closeModal()"></i>
+            <h2 id="modalTitle" style="margin-bottom: 20px;">Add New Menu Item</h2>
+            
+            <form id="menuForm">
+                <input type="hidden" id="formMenuId" name="menu_id" value="0">
+                
+                <div class="form-group">
+                    <label>Item Name</label>
+                    <input type="text" id="formName" name="name" required placeholder="e.g. Spicy Chicken Wings">
+                </div>
+                
+                <div style="display: flex; gap: 15px;">
+                    <div class="form-group" style="flex: 1;">
+                        <label>Price (₱)</label>
+                        <input type="number" id="formPrice" name="price" step="0.01" required placeholder="0.00">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                        <label>Category</label>
+                        <select id="formCategory" name="category" required>
+                            <option value="pork-chicken">Pork / Chicken</option>
+                            <option value="noodles-pasta">Noodles / Pasta</option>
+                            <option value="seafood">Seafood</option>
+                            <option value="appetizer-soup">Appetizers & Soup</option>
+                            <option value="dessert-drinks">Desserts & Drinks</option>
+                            <option value="group-meal">Group Meals (Bilao)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Description / Details</label>
+                    <textarea id="formDesc" name="description" rows="2" required placeholder="Good for 2-3 persons..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Upload Food Image</label>
+                    <input type="file" id="formImage" name="image_file" accept="image/png, image/jpeg, image/jpg">
+                    <small style="color: #666; font-size: 0.8rem; display: block; margin-top: 5px;" id="imageHelpText">Leave blank to keep existing image.</small>
+                </div>
+
+                <button type="submit" class="btn" id="saveBtn" style="width: 100%; margin-top: 10px;">Save Menu Item</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const tableBody = document.getElementById('menuTableBody');
+        const searchInput = document.getElementById('menuSearchInput');
+        const menuModal = document.getElementById('menuModal');
+        const menuForm = document.getElementById('menuForm');
+        let allFood = [];
+
+        function fetchMenu() {
+            fetch('get_menu.php')
+                .then(res => res.json())
+                .then(data => {
+                    allFood = data;
+                    renderMenuTable(allFood);
+                })
+                .catch(err => {
+                    tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: red;">Failed to load menu.</td></tr>';
+                });
+        }
+
+        function renderMenuTable(foodsToRender) {
+            tableBody.innerHTML = ''; 
+            if (foodsToRender.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No items found.</td></tr>';
+                return;
+            }
+
+            foodsToRender.forEach(food => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><img src="${food.image}" class="menu-thumbnail" onerror="this.src='https://via.placeholder.com/60/150d0d/ff4500?text=NA'"></td>
+                    <td style="font-weight: bold; color: #fff;">${food.name}</td>
+                    <td style="text-transform: capitalize;">${food.category.replace('-', ' & ')}</td>
+                    <td style="color: #888; font-size: 0.9rem;">${food.description}</td>
+                    <td style="color: orangered; font-weight: bold;">₱${parseFloat(food.price).toFixed(2)}</td>
+                    <td>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn-action" title="Edit" onclick="openEditModal(${food.menu_id})"><i class="ri-edit-line"></i></button>
+                            <button class="btn-action" title="Delete" style="color: #ff4d4d; border-color: #ff4d4d;" onclick="deleteMenu(${food.menu_id})"><i class="ri-delete-bin-line"></i></button>
+                        </div>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = "Add New Menu Item";
+            document.getElementById('imageHelpText').textContent = "Required for new items.";
+            document.getElementById('formImage').required = true;
+            menuForm.reset();
+            document.getElementById('formMenuId').value = "0";
+            menuModal.style.display = 'flex';
+        }
+
+        function openEditModal(menuId) {
+            const food = allFood.find(f => f.menu_id === menuId);
+            if (!food) return;
+
+            document.getElementById('modalTitle').textContent = "Edit Menu Item";
+            document.getElementById('imageHelpText').textContent = "Leave blank to keep existing image.";
+            document.getElementById('formImage').required = false;
+            
+            document.getElementById('formMenuId').value = food.menu_id;
+            document.getElementById('formName').value = food.name;
+            document.getElementById('formPrice').value = parseFloat(food.price).toFixed(2);
+            document.getElementById('formCategory').value = food.category;
+            document.getElementById('formDesc').value = food.description;
+            
+            menuModal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            menuModal.style.display = 'none';
+        }
+
+        window.addEventListener('click', e => {
+            if (e.target === menuModal) closeModal();
+        });
+
+        menuForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const btn = document.getElementById('saveBtn');
+            btn.textContent = "Saving...";
+            btn.disabled = true;
+
+            fetch('admin_save_menu.php', { method: 'POST', body: formData })
+                .then(res => res.json())
+                .then(data => {
+                    btn.textContent = "Save Menu Item";
+                    btn.disabled = false;
+                    if(data.success) {
+                        alert(data.message);
+                        closeModal();
+                        fetchMenu(); 
+                    } else {
+                        alert("Error: " + data.error);
+                    }
+                })
+                .catch(err => {
+                    alert("A server error occurred.");
+                    btn.textContent = "Save Menu Item";
+                    btn.disabled = false;
+                });
+        });
+
+        window.deleteMenu = function(menuId) {
+            const isConfirmed = confirm("Are you sure you want to permanently delete this item? This action cannot be undone.");
+            if (isConfirmed) {
+                const formData = new FormData();
+                formData.append('menu_id', menuId);
+
+                fetch('admin_delete_menu.php', { method: 'POST', body: formData })
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.success) {
+                            fetchMenu(); 
+                        } else {
+                            alert("Failed to delete: " + data.error);
+                        }
+                    });
+            }
+        };
+
+        searchInput.addEventListener('input', function() {
+            const filterText = this.value.toLowerCase();
+            const filteredMenu = allFood.filter(food => {
+                return ( food.name.toLowerCase().includes(filterText) || food.category.toLowerCase().includes(filterText) );
+            });
+            renderMenuTable(filteredMenu);
+        });
+
+        fetchMenu();
+
+        // LOGOUT LOGIC
+        function adminLogout(e) {
+            e.preventDefault();
+            fetch('admin_logout.php')
+                .then(() => {
+                    window.location.href = 'admin_login.html';
+                });
+        }
+    </script>
+</body>
+</html>

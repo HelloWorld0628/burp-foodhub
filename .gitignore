@@ -1,0 +1,27 @@
+# Environment variables (never commit real credentials)
+.env
+
+# Database local backups (contain sensitive data)
+/database/local/
+
+# Runtime upload directories (user content)
+/public/payments_img/*
+!/public/payments_img/.htaccess
+/public/delivery_img/*
+!/public/delivery_img/.htaccess
+
+# IDE
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*~

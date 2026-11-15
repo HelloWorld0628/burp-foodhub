@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu - BURP Foodhub</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css" rel="stylesheet" />
+</head>
+<body>
+    <header id="home" style="height: auto; padding-bottom: 0;">
+        <nav class="navbar" style="background-color: #000;">
+            <div class="logo">
+                <img src="img/log.png" alt="BURP">
+                <span>BURP Foodhub</span>
+            </div>
+            <ul class="nav_items" id="nav_links">
+                <div class="item">
+                    <li><a href="index.html#home">HOME</a></li>
+                    <li><a href="index.html#services">SERVICES</a></li>
+                    <li><a href="index.html#showcase">SHOWCASE</a></li>
+                    <li><a href="track.html">TRACK ORDER</a></li>
+                    <li><a href="index.html#contact">CONTACT</a></li>
+                </div>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div id="navAuth"></div>
+                    <div id="cartBtn" class="cart-nav-btn">
+                        <i class="ri-shopping-cart-2-line"></i>
+                        <span class="cart-count">0</span>
+                    </div>
+                </div>
+            </ul>
+            <div class="nav_menu" id="menu_btn">
+                <i class="ri-menu-line"></i>
+            </div>
+        </nav>
+    </header>
+
+    <section class="sec menu" id="menu" style="margin-top: 100px;">
+        <div class="head">
+            <h3 class="heading_1">Our Menu</h3>
+            <h1 class="heading">Explore our <span>Delicious</span> Dishes</h1>
+        </div>
+        <div class="filter-buttons">
+            <button class="btn filter-btn active" data-category="all">All</button>
+            <button class="btn filter-btn" data-category="pork-chicken">Pork & Chicken</button>
+            <button class="btn filter-btn" data-category="noodles-pasta">Noodles & Pasta</button>
+            <button class="btn filter-btn" data-category="seafood">Seafood</button>
+            <button class="btn filter-btn" data-category="appetizer-soup">Appetizers & Soup</button>
+            <button class="btn filter-btn" data-category="dessert-drinks">Dessert & Drinks</button>
+            <button class="btn filter-btn" data-category="group-meal">Group Meals</button>
+        </div>
+        <div class="boxes" id="menuFoods" style="margin-top: 2rem;"></div>
+    </section>
+
+    <div class="cart-modal" id="cartModal">
+        <div class="cart-content">
+            <div class="cart-header">
+                <h2>Your Order</h2>
+                <i class="ri-close-circle-line close-btn" id="closeCart"></i>
+            </div>
+            <div class="cart-body" id="cartItems"></div>
+            <div class="cart-footer">
+                <h3>Total: ₱<span id="cartTotal">0.00</span></h3>
+                <button class="btn" id="checkoutBtn" style="width: 100%; margin-top: 10px;">Proceed to Checkout</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="sec footer_container">
+            <div class="footer_col">
+                <div class="footer_logo logo">
+                    <img src="img/log.png" alt="">
+                    <span>BURP Foodhub</span>
+                </div>
+                <p class="footer_text">our job is to fill your tummy with delicious food and with fast and free delivery time.</p>
+                <ul class="footer_socials">
+                    <li><a href="#"><i class="ri-instagram-fill"></i></a></li>
+                    <li><a href="#"><i class="ri-facebook-fill"></i></a></li>
+                    <li><a href="#"><i class="ri-twitter-fill"></i></a></li>
+                </ul>
+            </div>
+            <div class="footer_col">
+                <h4>Explore</h4>
+                <ul class="footer_links">
+                    <li><a href="index.html#home">Home</a></li>
+                    <li><a href="index.html#services">Services</a></li>
+                    <li><a href="index.html#showcase">Showcase</a></li>
+                    <li><a href="menu.html">Menu</a></li>
+                </ul>
+            </div>
+            <div class="footer_col">
+                <h4>Company</h4>
+                <ul class="footer_links">
+                    <li><a href="#">My BURP</a></li>
+                    <li><a href="#">Partner</a></li>
+                    <li><a href="#">FAQ</a></li>
+                    <li><a href="#">Blog</a></li>
+                </ul>
+            </div>
+            <div class="footer_col">
+                <h4>Support</h4>
+                <ul class="footer_links">
+                    <li><a href="#">Account</a></li>
+                    <li><a href="#">Support Center</a></li>
+                    <li><a href="#">Feedback</a></li>
+                    <li><a href="index.html#contact">Contact Us</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer_bar">copyright @ 2026 BURP Foodhub. All right reserved.</div>
+    </footer>
+
+    <script src="index.js"></script>
+</body>
+</html>
