@@ -1,20 +1,111 @@
-# Burp Foodhub
+# BURP Foodhub
 
-## Project layout
+A full-stack PHP/MySQL food ordering system with customer, admin, and driver portals.
 
-- `public/` contains the PHP endpoints, web pages, styles, scripts, and image assets.
-- `database/schema.sql` is the sanitized schema/setup file, with the public menu catalog only.
-- `database/local/` contains the original local SQL backups. These are intentionally excluded from Git because they contain account credentials and customer/order data.
-- `public/payments_img/` and `public/delivery_img/` are runtime upload directories and are excluded from Git.
+## Attribution
 
-The page and API paths are kept the same. For Apache, either set the site's document root to `public/` (recommended), or serve the project root with `mod_rewrite` and `.htaccess` enabled; the root rewrite file forwards existing paths into `public/`. The project needs PHP with `mysqli` and a MySQL-compatible database. A static Live Server preview does not execute PHP.
+**Code by:** [HelloWorld0628](https://github.com/HelloWorld0628)  
+**Brand:** BURP Foodhub  
+**License:** MIT (see [LICENSE](LICENSE))
 
-To initialize a clean local database, create a database named `burp_foodhub` and import `database/schema.sql`. Do not import or publish the files under `database/local/`.
+---
 
-## GitHub and deployment safety
+## Project Layout
 
-The payment and delivery upload folders are ignored by Git, but the application currently serves those images from the web root. Git ignore rules do not make those files private on a live site. Treat them as sensitive and do not deploy real customer uploads until access-controlled file serving is implemented.
+```
+burp-foodhub/
+├── public/          # Document root (web-accessible)
+│   ├── index.html           # Customer home
+│   ├── menu.html            # Menu (public view, login required for cart)
+│   ├── checkout.html        # Protected checkout (pre-fills from session)
+│   ├── track.html           # Track order + My Orders tab (logged-in)
+│   ├── login.html           # Customer login
+│   ├── register.html        # Customer registration
+│   ├── admin*.html          # Admin portal
+│   ├── delivery*.html       # Driver portal
+│   └── assets/              # CSS, JS, images
+├── src/             # PHP API (all use config.php + env vars)
+│   ├── config.php           # DB config from $_ENV
+│   ├── customer_auth.php    # Register, Login, Logout, Check, Profile
+│   ├── process_order.php    # Order processing
+│   ├── track_order.php      # Track by number / list by email
+│   ├── delivery_*.php       # Driver API
+│   └── admin_*.php          # Admin API
+├── database/        # SQL files
+│   ├── schema.sql           # Clean schema + menu items only
+│   ├── burp_foodhub.sql     # Full dump (no sensitive data)
+│   └── burp_foodhub_updated.sql
+├── .env.example     # Railway env var template
+└── .htaccess        # Routes to public/
+```
 
-This repository is **not ready for public production deployment**. The application still has development-only security issues, including hard-coded database credentials, plaintext password handling, and API operations that trust client-supplied driver IDs or lack server-side authorization. Moving files and excluding local data does not fix those issues. Do not expose the app to the public internet until authentication, authorization, password hashing, and database configuration have been hardened and tested.
+---
 
-If a database dump or upload was already pushed to GitHub, deleting it in a later commit does not remove it from Git history. Remove it from repository history and rotate any credentials it contained before sharing the repository.
+## Features
+
+### Customer Portal
+- Browse menu (public)
+- Add to cart → prompts login
+- Secure checkout with receipt upload
+- Order tracking by number
+- **My Orders** tab (logged-in users see full history)
+- Session-based authentication with password hashing
+
+### Admin Portal (`/admin.html`)
+- Dashboard with order management
+- Menu CRUD (add/edit/delete items with image upload)
+- Customer list
+- Order status updates (Pending → Preparing)
+
+### Driver Portal (`/delivery_dashboard.html`)
+- Login/Register
+- View available orders
+- Accept orders
+- Mark "On the Way"
+- Upload delivery proof (photo + GPS)
+- Mark "Delivered"
+
+---
+
+## Quick Start (Local)
+
+1. **Requirements:** PHP 8.x, MySQL/MariaDB, Apache/Nginx
+2. **Database:** Create `burp_foodhub` DB, import `database/schema.sql`
+3. **Config:** Copy `.env.example` to `.env` and fill in DB credentials
+4. **Serve:** Point document root to `public/` (or use `.htaccess` rewrite)
+5. **Visit:** `http://localhost/`
+
+---
+
+## Railway Deployment
+
+1. Push to GitHub
+2. Create Railway project → Deploy from GitHub
+3. Add MySQL database service
+4. Set environment variables:
+   - `DB_HOST` = `${{MYSQLHOST}}`
+   - `DB_USER` = `${{MYSQLUSER}}`
+   - `DB_PASS` = `${{MYSQLPASSWORD}}`
+   - `DB_NAME` = `${{MYSQLDATABASE}}`
+5. Add persistent volumes for `public/payments_img`, `public/delivery_img`, `public/menu_img`
+6. Run migration: `ALTER TABLE customers ADD COLUMN password VARCHAR(255) NOT NULL AFTER email;`
+7. Get public URL from Railway → add to portfolio
+
+---
+
+## Security Notes
+
+- Uses `password_hash()` / `password_verify()` for customer passwords
+- Database credentials via environment variables (never hardcoded)
+- SQL injection prevention via `real_escape_string`
+- Admin cannot set "Delivered" status (driver-only)
+- Upload validation (type, size)
+- `.htaccess` protects upload directories from script execution
+
+**Not production-ready without:** HTTPS enforcement, CSRF tokens, rate limiting, input sanitization hardening, audit logging.
+
+---
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
