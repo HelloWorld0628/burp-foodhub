@@ -1,4 +1,4 @@
-# BURP Foodhub
+# BURP FoodHub Project
 
 A full-stack PHP/MySQL food ordering system with customer, admin, and driver portals.
 
